@@ -97,3 +97,15 @@ celerybeat-schedule
 
 # dotenv
 .env
+
+# Temporary Excel files
+~$*.xlsx
+
+# SECRET_KEY environment variables
+app/SECRET_KEY.env
+
+# Virtual environments
+venv/
+.venv/
+
+
