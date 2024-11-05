@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h2 class="text-center mb-4">Transaction Results</h2>
+
+{% if cointracking_available %}
+    <div class="row justify-content-center">
+        <div class="col-md-6 mb-3">
+            <div class="d-grid">
+                <a href="{{ url_for('main.download_transactions_excel') }}" class="btn btn-evmos">Download Transactions Excel</a>
+            </div>
+        </div>
+    </div>
+{% else %}
+    <div class="alert alert-warning text-center" role="alert">
+        No transaction data available to download.
+    </div>
+{% endif %}
+
+<div class="text-center">
+    <a href="{{ url_for('main.index') }}" class="btn btn-evmos">Track Another Wallet</a>
+</div>
+{% endblock %}

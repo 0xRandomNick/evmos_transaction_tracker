@@ -1,0 +1,530 @@
+[
+    {
+        "Contract Address":"0x2C68D1d6aB986Ff4640b51e1F14C716a076E44C4",
+        "Token Name":"Stride Staked Evmos",
+        "Token Symbol":"stEVMOS",
+        "Token Decimals":18
+    },
+    {
+        "Contract Address":"0xC732284e5deDb565ba403216d718a485038E55A6",
+        "Token Name":"Wormhole Bitcoin",
+        "Token Symbol":"WBTC",
+        "Token Decimals":8
+    },
+    {
+        "Contract Address":"0x4D036A97e9ad9e805f0E7B163Ea681B3dE83B7BF",
+        "Token Name":"Wormhole ETH",
+        "Token Symbol":"WETH",
+        "Token Decimals":8
+    },
+    {
+        "Contract Address":"0x458dbF88bf5411f009BC1799925e7f687a4DA975",
+        "Token Name":"STEER_UNIV3_VAULT_77",
+        "Token Symbol":"LP-V77",
+        "Token Decimals":18
+    },
+    {
+        "Contract Address":"0x7475A87A5BEA534340658eB471788D043c30C689",
+        "Token Name":"STEER_UNIV3_VAULT_76",
+        "Token Symbol":"LP-V76",
+        "Token Decimals":18
+    },
+    {
+        "Contract Address":"0x10bc3f822eee18a0e18949a0161cF2D23bD414cB",
+        "Token Name":"STEER_UNIV3_VAULT_38",
+        "Token Symbol":"LP-V38",
+        "Token Decimals":18
+    },
+    {
+        "Contract Address":"0x7475D4A3E9ec612CA66397a6F044C7f463145b7f",
+        "Token Name":"STEER_UNIV3_VAULT_66",
+        "Token Symbol":"LP-V66",
+        "Token Decimals":18
+    },
+    {
+        "Contract Address":"0x98fAFD9F714CE0B4bB2870527076F2F314aAed82",
+        "Token Name":"Tashi",
+        "Token Symbol":"TASHI",
+        "Token Decimals":18
+    },
+    {
+        "Contract Address":"0xD4949664cD82660AaE99bEdc034a0deA8A0bd517",
+        "Token Name":"Evmos",
+        "Token Symbol":"EVMOS",
+        "Token Decimals":18
+    },
+    {
+        "Contract Address":"0x4305325b20518fF42C50CB7288B6A5D26dff19b0",
+        "Token Name":"ICHI Vault Liquidity",
+        "Token Symbol":"ICHI_Vault_LP",
+        "Token Decimals":18
+    },
+    {
+        "Contract Address":"0x8864d0D5646e38e224afA68115425F0D1BA6933a",
+        "Token Name":"STEER_UNIV3_VAULT_46",
+        "Token Symbol":"LP-V46",
+        "Token Decimals":18
+    },
+    {
+        "Contract Address":"0xf1faE9eC886C5F6E4ea13dA2456087Bd72F02cD1",
+        "Token Name":"USDC",
+        "Token Symbol":"USDC",
+        "Token Decimals":6
+    },
+    {
+        "Contract Address":"0xB8f812B5943ab3BF941D5D4F1de90A4b326c5d8f",
+        "Token Name":"USDT on Kava",
+        "Token Symbol":"USDT",
+        "Token Decimals":6
+    },
+    {
+        "Contract Address":"0xF85655252b38c33F4070e8d4795f8ECAa3a9C913",
+        "Token Name":"ICHI Vault Liquidity",
+        "Token Symbol":"ICHI_Vault_LP",
+        "Token Decimals":18
+    },
+    {
+        "Contract Address":"0xBf1DC47671ca0aebff1CDeC7dAC3a8E339aAeF76",
+        "Token Name":"STEER_UNIV3_VAULT_50",
+        "Token Symbol":"LP-V50",
+        "Token Decimals":18
+    },
+    {
+        "Contract Address":"0x0E7d525f517D7529DBA48Ad892E0b021F50D0c2d",
+        "Token Name":"STEER_UNIV3_VAULT_49",
+        "Token Symbol":"LP-V49",
+        "Token Decimals":18
+    },
+    {
+        "Contract Address":"0xB5124FA2b2cF92B2D469b249433BA1c96BDF536D",
+        "Token Name":"Stride Staked Atom",
+        "Token Symbol":"stATOM",
+        "Token Decimals":6
+    },
+    {
+        "Contract Address":"0x16d4C8d8913aC545FD638FE7cB43CEB85f1139c2",
+        "Token Name":"Lending Wormhole Bitcoin",
+        "Token Symbol":"cWBTC",
+        "Token Decimals":8
+    },
+    {
+        "Contract Address":"0x5dbDD3AC44983527f99941149f416009b314C830",
+        "Token Name":"Tashi escrowed token",
+        "Token Symbol":"esTASHI",
+        "Token Decimals":18
+    },
+    {
+        "Contract Address":"0x6196AEe47D983E9b20610A3e816935bFfA8d17D1",
+        "Token Name":"Kava",
+        "Token Symbol":"KAVA",
+        "Token Decimals":6
+    },
+    {
+        "Contract Address":"0x3f75ceabCDfed1aCa03257Dc6Bdc0408E2b4b026",
+        "Token Name":"Diffusion",
+        "Token Symbol":"DIFF",
+        "Token Decimals":18
+    },
+    {
+        "Contract Address":"0x75aeE82a16BD1fB98b11879af93AB7CE055f66Da",
+        "Token Name":"xDiffusion",
+        "Token Symbol":"xDIFF",
+        "Token Decimals":18
+    },
+    {
+        "Contract Address":"0x4E2D4F33d759976381D9DeE04B197bF52F6bC1FC",
+        "Token Name":"SPACE\u0000",
+        "Token Symbol":"SPACE\u0000",
+        "Token Decimals":18
+    },
+    {
+        "Contract Address":"0x50dE24B3f0B3136C50FA8A3B8ebc8BD80a269ce5",
+        "Token Name":"Wrapped Ether on Axelar",
+        "Token Symbol":"axlWETH",
+        "Token Decimals":18
+    },
+    {
+        "Contract Address":"0x344aE68103df4965CD84d7EceF79Ddfe7E88Aa82",
+        "Token Name":"STEER_UNIV3_VAULT_52",
+        "Token Symbol":"LP-V52",
+        "Token Decimals":18
+    },
+    {
+        "Contract Address":"0xF3d4C27cB8FFE8fe3FcCDDEa80f0b6C71A1118ED",
+        "Token Name":"Lending Wormhole ETH",
+        "Token Symbol":"cWETH",
+        "Token Decimals":8
+    },
+    {
+        "Contract Address":"0x51e44FfaD5C2B122C8b635671FCC8139dc636E82",
+        "Token Name":"USD Coin",
+        "Token Symbol":"madUSDC",
+        "Token Decimals":6
+    },
+    {
+        "Contract Address":"0x3452e23F9c4cC62c70B7ADAd699B264AF3549C19",
+        "Token Name":"Juno",
+        "Token Symbol":"JUNO",
+        "Token Decimals":6
+    },
+    {
+        "Contract Address":"0x1cd248D72248A0618932F77093Dc4ceC9757759d",
+        "Token Name":"Lending EVMOS",
+        "Token Symbol":"cEVMOS",
+        "Token Decimals":8
+    },
+    {
+        "Contract Address":"0x1ED12675871c43E25cCA4e2c1eC612ABf7cC8687",
+        "Token Name":"STEER_UNIV3_VAULT_22",
+        "Token Symbol":"LP-V22",
+        "Token Decimals":18
+    },
+    {
+        "Contract Address":"0xE60CE2dfa6D4Ad37Ade1dcB7aC4D6C3A093b3A7E",
+        "Token Name":"Rocket Pool staked ETH on Axelar",
+        "Token Symbol":"axlRETH",
+        "Token Decimals":18
+    },
+    {
+        "Contract Address":"0x75A2623366e3de24ceAF9ef9DcaEF1b10Fe62d32",
+        "Token Name":"STEER_UNIV3_VAULT_24",
+        "Token Symbol":"LP-V24",
+        "Token Decimals":18
+    },
+    {
+        "Contract Address":"0x5Ac7404f17f64fE8cd812D45a6f5FC6FfC46f288",
+        "Token Name":"Lending USDT on Kava",
+        "Token Symbol":"cUSDT.k",
+        "Token Decimals":8
+    },
+    {
+        "Contract Address":"0xC5e00D3b04563950941f7137B5AfA3a534F0D6d6",
+        "Token Name":"Cosmos Hub",
+        "Token Symbol":"ATOM",
+        "Token Decimals":6
+    },
+    {
+        "Contract Address":"0x15C3Eb3B621d1Bff62CbA1c9536B7c1AE9149b57",
+        "Token Name":"USD Coin on Axelar",
+        "Token Symbol":"axlUSDC",
+        "Token Decimals":6
+    },
+    {
+        "Contract Address":"0x7Ed6adFDbD1Ae45D52B8924870703d36bC38d829",
+        "Token Name":"STEER_UNIV3_VAULT_10",
+        "Token Symbol":"LP-V10",
+        "Token Decimals":18
+    },
+    {
+        "Contract Address":"0xd7b451014c38216938Ec02Ea69769BA02e744044",
+        "Token Name":"Lending ATOM",
+        "Token Symbol":"cATOM",
+        "Token Decimals":8
+    },
+    {
+        "Contract Address":"0xe46910336479F254723710D57e7b683F3315b22B",
+        "Token Name":"USD Coin (Celer)",
+        "Token Symbol":"ceUSDC",
+        "Token Decimals":6
+    },
+    {
+        "Contract Address":"0xb72A7567847abA28A2819B855D7fE679D4f59846",
+        "Token Name":"Tether USD (Celer)",
+        "Token Symbol":"ceUSDT",
+        "Token Decimals":6
+    },
+    {
+        "Contract Address":"0xeD5d692caF043489058d8ae9B9C31CA5e468E60f",
+        "Token Name":"Diffusion LP Token",
+        "Token Symbol":"DLP",
+        "Token Decimals":18
+    },
+    {
+        "Contract Address":"0x8FA78CEB7F04118Ec6d06AaC37Ca854691d8e963",
+        "Token Name":"Stride",
+        "Token Symbol":"STRD",
+        "Token Decimals":6
+    },
+    {
+        "Contract Address":"0xAF0A571e8A3d6eC23788A3443aC2f428da2cCC1A",
+        "Token Name":"SpaceSwap LP Token",
+        "Token Symbol":"SLP",
+        "Token Decimals":18
+    },
+    {
+        "Contract Address":"0xC73Ab455311Cd7Cc616736759A6edB36bfC6e88d",
+        "Token Name":"SpaceSwap LP Token",
+        "Token Symbol":"SLP",
+        "Token Decimals":18
+    },
+    {
+        "Contract Address":"0x74cf35d8CBec0eB82998A5Ebe6B63411687fe5C9",
+        "Token Name":"xEVMOS",
+        "Token Symbol":"xEVMOS",
+        "Token Decimals":18
+    },
+    {
+        "Contract Address":"0x68F175Fb9Dc8b795D8e5647C2C71f787E736A0ED",
+        "Token Name":"xSPACE",
+        "Token Symbol":"xSPACE",
+        "Token Decimals":18
+    },
+    {
+        "Contract Address":"0xdbB514D2Ec89524368B0A24d18B0d6649C4EfE90",
+        "Token Name":"SpaceSwap LP Token",
+        "Token Symbol":"SLP",
+        "Token Decimals":18
+    },
+    {
+        "Contract Address":"0x8006320739fC281da67Ee62eB9b4Ef8ADD5C903a",
+        "Token Name":"Avalanche (Celer)",
+        "Token Symbol":"ceAVAX",
+        "Token Decimals":18
+    },
+    {
+        "Contract Address":"0x1F0648F6a20d2F6d5147957e1C2eB24faDf9272F",
+        "Token Name":"SpaceSwap LP Token",
+        "Token Symbol":"SLP",
+        "Token Decimals":18
+    },
+    {
+        "Contract Address":"0xF5b24c0093b65408ACE53df7ce86a02448d53b25",
+        "Token Name":"Wrapped Bitcoin on Axelar",
+        "Token Symbol":"axlWBTC",
+        "Token Decimals":8
+    },
+    {
+        "Contract Address":"0x1E4732C7D934173116a1981F9B94B31D5da3c6F9",
+        "Token Name":"Diffusion LP Token",
+        "Token Symbol":"DLP",
+        "Token Decimals":18
+    },
+    {
+        "Contract Address":"0x7cfd597A83De9c4B23D2ce19B07023bB76D66997",
+        "Token Name":"Diffusion LP Token",
+        "Token Symbol":"DLP",
+        "Token Decimals":18
+    },
+    {
+        "Contract Address":"0x9d3055544E85Dbaea07A6966741010e663ab5444",
+        "Token Name":"Diffusion LP Token",
+        "Token Symbol":"DLP",
+        "Token Decimals":18
+    },
+    {
+        "Contract Address":"0x78549EF94dB08E8bf2e528F0aE97F186Fc51185E",
+        "Token Name":"Kinesis axlUSDT\/ceUSDT\/gUSDT",
+        "Token Symbol":"USDTPool",
+        "Token Decimals":18
+    },
+    {
+        "Contract Address":"0xecEEEfCEE421D8062EF8d6b4D814efe4dc898265",
+        "Token Name":"Tether USD channel-8",
+        "Token Symbol":"ibc G-USDT",
+        "Token Decimals":6
+    },
+    {
+        "Contract Address":"0xe01C6D4987Fc8dCE22988DADa92d56dA701d0Fe0",
+        "Token Name":"Tether USD on Axelar",
+        "Token Symbol":"axlUSDT",
+        "Token Decimals":6
+    },
+    {
+        "Contract Address":"0xd567B3d7B8FE3C79a1AD8dA978812cfC4Fa05e75",
+        "Token Name":"Dai Stablecoin channel-8",
+        "Token Symbol":"ibc G-DAI",
+        "Token Decimals":18
+    },
+    {
+        "Contract Address":"0x2141e89dDc482064513Ce3923aca752387a0938f",
+        "Token Name":"Diffusion LP Token",
+        "Token Symbol":"DLP",
+        "Token Decimals":18
+    },
+    {
+        "Contract Address":"0x2fD681DB6b1e4775a79c9fF728B86a6EfE460be9",
+        "Token Name":"Diffusion LP Token",
+        "Token Symbol":"DLP",
+        "Token Decimals":18
+    },
+    {
+        "Contract Address":"0x580216B72d2f70953d3Be4E885863aC295670EE5",
+        "Token Name":"Diffusion <> Midas ceUSDC-ceUSDT",
+        "Token Symbol":"fceUSDC-ceUSDT-0",
+        "Token Decimals":18
+    },
+    {
+        "Contract Address":"0xfD2fd675176a8Ed1CF643886ee557929FDEcBBfD",
+        "Token Name":"Kinesis axlUSDC\/ceUSDC\/gUSDC",
+        "Token Symbol":"USDCPool",
+        "Token Decimals":18
+    },
+    {
+        "Contract Address":"0x6d8a36984aF4d50F58C1C2c5a00771d0e7C77D95",
+        "Token Name":"Kinesis axlUSDT\/ceUSDT\/gUSDT",
+        "Token Symbol":"USDTPool",
+        "Token Decimals":18
+    },
+    {
+        "Contract Address":"0x619bEc177e069a11bC95b0699a8d7f40a8A4DB2B",
+        "Token Name":"Kinesis axlUSDC\/ceUSDC\/gUSDC",
+        "Token Symbol":"USDCPool",
+        "Token Decimals":18
+    },
+    {
+        "Contract Address":"0x97b02A41187E2C81e74D6fA892881da38aD27dD9",
+        "Token Name":"Kinesis axlDAI\/ceDAI\/gDAI",
+        "Token Symbol":"DAIPool",
+        "Token Decimals":18
+    },
+    {
+        "Contract Address":"0x5FD55A1B9FC24967C4dB09C513C3BA0DFa7FF687",
+        "Token Name":"USD Coin channel-8",
+        "Token Symbol":"ibc G-USDC",
+        "Token Decimals":6
+    },
+    {
+        "Contract Address":"0xf3ec3c2cDc3B3d792d34b99F19eC2aAE95E62892",
+        "Token Name":"Diffusion LP Token",
+        "Token Symbol":"DLP",
+        "Token Decimals":18
+    },
+    {
+        "Contract Address":"0x153A59d48AcEAbedbDCf7a13F67Ae52b434B810B",
+        "Token Name":"Wrapped Ether (Celer)",
+        "Token Symbol":"ceWETH",
+        "Token Decimals":18
+    },
+    {
+        "Contract Address":"0x80b5a32E4F032B2a058b4F29EC95EEfEEB87aDcd",
+        "Token Name":"Graviton channel-8",
+        "Token Symbol":"ibc GRAV",
+        "Token Decimals":6
+    },
+    {
+        "Contract Address":"0x40F75Fe84383dF52FcaB461497C5949C1Dc811De",
+        "Token Name":"Diffusion LP Token",
+        "Token Symbol":"DLP",
+        "Token Decimals":18
+    },
+    {
+        "Contract Address":"0x815dEd53B559292198B83A1332Ef90BE1418B50F",
+        "Token Name":"Diffusion LP Token",
+        "Token Symbol":"DLP",
+        "Token Decimals":18
+    },
+    {
+        "Contract Address":"0x089B913E5Ba7B32d44A69B09f600b87c70Df57eb",
+        "Token Name":"Diffusion LP Token",
+        "Token Symbol":"DLP",
+        "Token Decimals":18
+    },
+    {
+        "Contract Address":"0x6B26a6205411e7fdCE766008C9218734A76Bc23C",
+        "Token Name":"ICHI Vault Liquidity",
+        "Token Symbol":"ICHI_Vault_LP",
+        "Token Decimals":18
+    },
+    {
+        "Contract Address":"0xCFFF30254165480EF98F2DFDff51D12657b3b62E",
+        "Token Name":"ICHI Vault Liquidity",
+        "Token Symbol":"ICHI_Vault_LP",
+        "Token Decimals":18
+    },
+    {
+        "Contract Address":"0x272c35EEd0E96c0bF05D0D4071545e1E92D5206A",
+        "Token Name":"ICHI Vault Liquidity",
+        "Token Symbol":"ICHI_Vault_LP",
+        "Token Decimals":18
+    },
+    {
+        "Contract Address":"0x26e9194FB6c1Ff3B88fFC195d93c390601c15e9A",
+        "Token Name":"ICHI Vault Liquidity",
+        "Token Symbol":"ICHI_Vault_LP",
+        "Token Decimals":18
+    },
+    {
+        "Contract Address":"0x7AD1F5e96977a2FEcEacb80C068F4f8B49b3F613",
+        "Token Name":"ICHI Vault Liquidity",
+        "Token Symbol":"ICHI_Vault_LP",
+        "Token Decimals":18
+    },
+    {
+        "Contract Address":"0x7E5ea44e6098EBA895bdd2EF9456f80BCEC24859",
+        "Token Name":"ICHI Vault Liquidity",
+        "Token Symbol":"ICHI_Vault_LP",
+        "Token Decimals":18
+    },
+    {
+        "Contract Address":"0x2da7e489b935F0ed7c5191358a917086eAA1f735",
+        "Token Name":"Lending USDC",
+        "Token Symbol":"cUSDC",
+        "Token Decimals":8
+    },
+    {
+        "Contract Address":"0x581366984221Cb599ef1877bd787a9d05BF33EAd",
+        "Token Name":"STEER_UNIV3_VAULT_23",
+        "Token Symbol":"LP-V23",
+        "Token Decimals":18
+    },
+    {
+        "Contract Address":"0x45c5e270c6f01e48507098c6C8b580584EF3E559",
+        "Token Name":"SpaceSwap LP Token",
+        "Token Symbol":"SLP",
+        "Token Decimals":18
+    },
+    {
+        "Contract Address":"0x27CFA1Ea7cE0840153540DdEb234080043a10c67",
+        "Token Name":"SpaceSwap LP Token",
+        "Token Symbol":"SLP",
+        "Token Decimals":18
+    },
+    {
+        "Contract Address":"0xC4CcDf91b810a61cCB48b35ccCc066C63bf94B4F",
+        "Token Name":"Wormhole USDC on Ethereum",
+        "Token Symbol":"WHUSDC",
+        "Token Decimals":6
+    },
+    {
+        "Contract Address":"0xa9582420B222C85Ee5b6e766415EEa5673283A03",
+        "Token Name":"Wormhole USDT on Ethereum",
+        "Token Symbol":"WHUSDT",
+        "Token Decimals":6
+    },
+    {
+        "Contract Address":"0xb98e169C37ce30Dd47Fdad1f9726Fb832191e60b",
+        "Token Name":"Wrapped BTC (Celer)",
+        "Token Symbol":"ceWBTC",
+        "Token Decimals":8
+    },
+    {
+        "Contract Address":"0xc40f5A00Eb6A298709b6334dCd646a13c8A1Fc7f",
+        "Token Name":"Pangolin Liquidity",
+        "Token Symbol":"PGL",
+        "Token Decimals":18
+    },
+    {
+        "Contract Address":"0xC00c6f99129536db8c1D9009e0CE6417fAD0CC65",
+        "Token Name":"Diffusion LP Token",
+        "Token Symbol":"DLP",
+        "Token Decimals":18
+    },
+    {
+        "Contract Address":"0x4Aa9c250874C2d14D0d686833e7b3C5c1837c36c",
+        "Token Name":"Diffusion LP Token",
+        "Token Symbol":"DLP",
+        "Token Decimals":18
+    },
+    {
+        "Contract Address":"0xD7bfB11ED8fd924E77487480d13542328601e5a3",
+        "Token Name":"Diffusion LP Token",
+        "Token Symbol":"DLP",
+        "Token Decimals":18
+    },
+    {
+        "Contract Address":"0xc03345448969Dd8C00e9E4A85d2d9722d093aF8E",
+        "Token Name":"Wrapped Ether channel-8",
+        "Token Symbol":"ibc G-WETH",
+        "Token Decimals":18
+    }
+]
