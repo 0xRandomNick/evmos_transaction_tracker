@@ -135,21 +135,17 @@ def fetch_transactions_for_event(query, api_url, per_page, max_transactions=None
 
             # Extract Ethereum tx hash if present
             eth_tx_hash = None
-            logs = tx_response.get('logs', [])
-            for log in logs:
-                events = log.get('events', [])
-                for event_item in events:
-                    if event_item.get('type') == 'ethereum_tx':
-                        attributes = event_item.get('attributes', [])
-                        for attr in attributes:
-                            if attr['key'] == 'ethereumTxHash':
-                                eth_tx_hash = attr['value']
-                                tx_response['ethereum_tx_hash'] = eth_tx_hash
-                                break
-                        if eth_tx_hash:
+            events = tx_response.get('events', [])
+            for event_item in events:
+                if event_item.get('type') == 'ethereum_tx':
+                    attributes = event_item.get('attributes', [])
+                    for attr in attributes:
+                        if attr.get('key') == 'ethereumTxHash':
+                            eth_tx_hash = attr.get('value')
+                            tx_response['ethereum_tx_hash'] = eth_tx_hash
                             break
-                if eth_tx_hash:
-                    break
+                    if eth_tx_hash:
+                        break
 
             transactions.append(tx_response)
 
@@ -166,26 +162,50 @@ def fetch_transactions_for_event(query, api_url, per_page, max_transactions=None
 
     return transactions[:max_transactions] if max_transactions else transactions
 
+
 def extract_fee(tx_response, queried_address):
     events = tx_response.get('events', [])
+    total_fee_out = 0  # Total amount sent from our wallet to fee collector
+    total_fee_in = 0   # Total amount received from fee collector to our wallet
+    fee_currency = None
+
     for event in events:
         if event.get('type') == 'transfer':
             attributes = event.get('attributes', [])
-            recipient = None
-            sender = None
-            amount_str = None
+            transfers = []
+            current_transfer = {}
             for attr in attributes:
-                if attr.get('key') == 'recipient' and attr.get('value') == FEE_COLLECTOR_MODULE:
-                    recipient = attr.get('value')
-                elif attr.get('key') == 'sender' and attr.get('value') == queried_address:
-                    sender = attr.get('value')
-                elif attr.get('key') == 'amount':
-                    amount_str = attr.get('value')
-            if recipient and sender and amount_str:
-                # Parse the amount string to extract amount and denom
+                key = attr.get('key')
+                value = attr.get('value')
+
+                # Add key-value to current transfer
+                current_transfer[key] = value
+
+                # When we have a complete transfer, process it
+                if 'sender' in current_transfer and 'recipient' in current_transfer and 'amount' in current_transfer:
+                    transfers.append(current_transfer)
+                    current_transfer = {}
+
+            # Process each transfer
+            for transfer in transfers:
+                sender = transfer.get('sender')
+                recipient = transfer.get('recipient')
+                amount_str = transfer.get('amount')
+
                 amount, denom = parse_amount(amount_str)
-                return amount, denom
-    return None, None
+                if sender == queried_address and recipient == FEE_COLLECTOR_MODULE:
+                    total_fee_out += amount
+                    fee_currency = denom
+                elif sender == FEE_COLLECTOR_MODULE and recipient == queried_address:
+                    total_fee_in += amount
+                    fee_currency = denom
+
+    net_fee = total_fee_out - total_fee_in
+    if net_fee != 0:
+        return net_fee, fee_currency
+    else:
+        return None, None
+
 
 def parse_amount(amount_str):
     import re
@@ -197,13 +217,12 @@ def parse_amount(amount_str):
     return amount_value, denom
 
 def contains_cosmos_events(tx_response, cosmos_event_types={'delegate', 'redelegate', 'unbond'}):
-    logs = tx_response.get('logs', [])
-    for log in logs:
-        events = log.get('events', [])
-        for event in events:
-            if event.get('type') in cosmos_event_types:
-                return True
+    events = tx_response.get('events', [])
+    for event in events:
+        if event.get('type') in cosmos_event_types:
+            return True
     return False
+
 
 def process_transactions(
     transactions,
@@ -249,23 +268,20 @@ def process_transactions(
         if has_cosmos_event:
             is_evm_tx = False
         else:
-            # Existing logic to identify EVM transactions
-            logs = tx_response.get('logs', [])
-            for log in logs:
-                events = log.get('events', [])
-                for event in events:
-                    if event.get('type') == 'ethereum_tx':
-                        is_evm_tx = True
-                        attributes = event.get('attributes', [])
-                        for attr in attributes:
-                            if attr['key'] == 'ethereumTxHash':
-                                eth_tx_hash = attr['value']
-                                tx_response['ethereum_tx_hash'] = eth_tx_hash
-                                break
-                        if eth_tx_hash:
+            # Updated code: Use events directly
+            events = tx_response.get('events', [])
+            for event in events:
+                if event.get('type') == 'ethereum_tx':
+                    is_evm_tx = True
+                    attributes = event.get('attributes', [])
+                    for attr in attributes:
+                        if attr.get('key') == 'ethereumTxHash':
+                            eth_tx_hash = attr.get('value')
+                            tx_response['ethereum_tx_hash'] = eth_tx_hash
                             break
-                if eth_tx_hash:
-                    break
+                    if eth_tx_hash:
+                        break
+
 
         # Extract Ethereum tx hash if present
         if is_evm_tx:
@@ -438,25 +454,27 @@ def process_evm_transaction(
     value = 0
 
     # Extract 'from' address from 'message' event attributes
-    for log in logs:
-        events = log.get('events', [])
-        for event in events:
-            if event.get('type') == 'message':
-                attributes = event.get('attributes', [])
-                for attr in attributes:
-                    if attr.get('key') == 'sender':
-                        from_address_bech32 = attr.get('value')
-                        try:
-                            from_address_hex = bech32_to_hex(from_address_bech32).lower()
-                            logger.debug(f"From Address (Bech32): {from_address_bech32} -> Hex: {from_address_hex}")
-                        except ValueError:
-                            from_address_hex = None
-                            logger.error(f"Invalid Bech32 address: {from_address_bech32}")
-                        break
-                if from_address_hex:
+    events = tx_response.get('events', [])
+    from_address_hex = None
+    to_address_hex = None
+    value = 0
+
+    for event in events:
+        if event.get('type') == 'message':
+            attributes = event.get('attributes', [])
+            for attr in attributes:
+                if attr.get('key') == 'sender':
+                    from_address_bech32 = attr.get('value')
+                    try:
+                        from_address_hex = bech32_to_hex(from_address_bech32).lower()
+                        logger.debug(f"From Address (Bech32): {from_address_bech32} -> Hex: {from_address_hex}")
+                    except ValueError:
+                        from_address_hex = None
+                        logger.error(f"Invalid Bech32 address: {from_address_bech32}")
                     break
-        if from_address_hex:
-            break
+            if from_address_hex:
+                break
+
 
     # Extract 'to' address and 'value' from transaction data
     try:
@@ -536,39 +554,39 @@ def process_evm_transaction(
             logger.info(f"Processed EVM Transfer Event: {event_dict}")
             processed_events.append(event_dict)
 
-    # Process EVM transaction logs
-    for log in logs:
-        for event in log.get('events', []):
-            if event.get('type') == 'tx_log':
-                for attr in event.get('attributes', []):
-                    if attr['key'] == 'txLog':
-                        tx_log_value = attr['value']
-                        try:
-                            tx_log = json.loads(tx_log_value)
-                            logger.debug(f"Decoded txLog: {tx_log}")
-                            decoded_events = decode_evm_transfer_events(
-                                tx_log,
-                                timestamp,
-                                hex_wallet_addresses,
-                                tx_hash,
-                                method_name,
-                                contract_library,
-                                address_name_map,
-                                ibc_denom_library  # Pass ibc_denom_library here
-                            )
-                            if decoded_events:
-                                for decoded_event in decoded_events:
-                                    # Ensure fee information is included if applicable
-                                    decoded_event['fee_amount'] = fee_amount
-                                    decoded_event['fee_currency'] = fee_currency
-                                    # Ensure Ethereum Tx Hash is set for decoded events
-                                    decoded_event['ethereum_tx_hash'] = eth_tx_hash if eth_tx_hash else ''
-                                    logger.info(f"Decoded EVM Transfer Event: {decoded_event}")
-                                    processed_events.append(decoded_event)
-                        except Exception as e:
-                            logger.error(f"Error parsing txLog in transaction {tx_hash}: {e}")
-                            continue
+    # Process EVM transaction events
+    for event in events:
+        if event.get('type') == 'tx_log':
+            for attr in event.get('attributes', []):
+                if attr.get('key') == 'txLog':
+                    tx_log_value = attr.get('value')
+                    try:
+                        tx_log = json.loads(tx_log_value)
+                        logger.debug(f"Decoded txLog: {tx_log}")
+                        decoded_events = decode_evm_transfer_events(
+                            tx_log,
+                            timestamp,
+                            hex_wallet_addresses,
+                            tx_hash,
+                            method_name,
+                            contract_library,
+                            address_name_map,
+                            ibc_denom_library  # Pass ibc_denom_library here
+                        )
+                        if decoded_events:
+                            for decoded_event in decoded_events:
+                                # Ensure fee information is included if applicable
+                                decoded_event['fee_amount'] = fee_amount
+                                decoded_event['fee_currency'] = fee_currency
+                                # Ensure Ethereum Tx Hash is set for decoded events
+                                decoded_event['ethereum_tx_hash'] = tx_response.get('ethereum_tx_hash', '')
+                                logger.info(f"Decoded EVM Transfer Event: {decoded_event}")
+                                processed_events.append(decoded_event)
+                    except Exception as e:
+                        logger.error(f"Error parsing txLog in transaction {tx_hash}: {e}")
+                        continue
     return processed_events
+
 
 def process_cosmos_transaction(
     tx_response,

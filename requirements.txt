@@ -28,3 +28,4 @@ tzdata==2024.2
 urllib3==2.2.3
 Werkzeug==3.0.6
 eth-hash[pycryptodome]==3.21.0
+python-dotenv==1.0.1
