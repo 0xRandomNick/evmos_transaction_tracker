@@ -1,6 +1,8 @@
 # app/main.py
 
 import datetime
+import os
+import uuid
 from tqdm import tqdm
 from .data_loader import (
     load_method_signatures,
@@ -22,9 +24,21 @@ import requests
 import pandas as pd
 import base64
 import json
-import re  # Import regex for address validation
+import logging
+import re
+import shutil  # For cleaning up temporary directories
 
 FEE_COLLECTOR_MODULE = 'evmos17xpfvakm2amg962yls6f84z3kell8c5ljcjw34'
+
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s %(levelname)s:%(message)s',
+    handlers=[
+        logging.FileHandler("app.log"),
+        logging.StreamHandler()
+    ]
+)
 
 def is_bech32_address(address):
     return address.startswith('evmos')  # Adjust the prefix if necessary
@@ -55,57 +69,84 @@ def extract_method_name(tx_response, method_sig_to_name):
                 if data_bytes and len(data_bytes) >= 4:
                     method_signature = data_bytes[:4].hex()
                     return method_sig_to_name.get(method_signature, 'Unknown Method')
-        return 'Unknown Method'
+        return 'Transaction Fee'  # Changed default to 'Transaction Fee' for Cosmos transactions
     else:
         # For Cosmos transactions, default to 'Transaction Fee'
         return 'Transaction Fee'
 
-def fetch_transactions(address, max_transactions=None, api_base_url=None):
+def fetch_transactions(address, max_transactions=None, api_base_url=None, output_dir='fetched_transactions', request_id=None):
+    if not request_id:
+        request_id = str(uuid.uuid4())
+
+    # Create a unique subdirectory for the request
+    unique_output_dir = os.path.join(output_dir, f"request_{request_id}")
+    os.makedirs(unique_output_dir, exist_ok=True)
+    logging.debug(f"Created unique output directory: {unique_output_dir}")
+
     if not api_base_url:
         api_base_url = 'http://88.198.48.87:1317'
-    
+
     # Ensure api_base_url does not end with a slash
     api_base_url = api_base_url.rstrip('/')
-    
+
     # Append the required path to form the complete API URL
     api_url = f"{api_base_url}/cosmos/tx/v1beta1/txs"
-    
-    transactions = []
+
     per_page = 100  # Number of transactions per API call
 
+    all_transactions = []
+
+    # Function to handle fetching and writing transactions
+    def fetch_and_write(query, type_label):
+        try:
+            fetched_transactions = fetch_transactions_for_event(
+                query,
+                api_url,
+                per_page,
+                max_transactions,
+                address  # Pass the address to correctly track it in fee extraction
+            )
+        except Exception as e:
+            logging.error(f"Error fetching {type_label} transactions: {e}")
+            return  # Exit the function on error
+
+        if not fetched_transactions:
+            logging.info(f"No {type_label} transactions found.")
+            return  # Exit if no transactions are returned
+
+        # Write transactions to disk with unique filenames
+        file_path = os.path.join(unique_output_dir, f"{type_label}_transactions_{request_id}.json")
+        with open(file_path, 'w', encoding='utf-8') as f:
+            json.dump(fetched_transactions, f, ensure_ascii=False, indent=4)
+
+        logging.info(f"Fetched and wrote {len(fetched_transactions)} {type_label} transactions.")
+        all_transactions.extend(fetched_transactions)
+
     # Fetch transactions where the address is the sender
-    sender_transactions = fetch_transactions_for_event(
-        f"message.sender='{address}'",
-        api_url,
-        per_page,
-        max_transactions,
-        address  # Pass the address to correctly track it in fee extraction
-    )
-    transactions.extend(sender_transactions)
+    fetch_and_write(f"message.sender='{address}'", "sender")
 
     # Fetch transactions where the address is the recipient
-    recipient_transactions = fetch_transactions_for_event(
-        f"transfer.recipient='{address}'",
-        api_url,
-        per_page,
-        max_transactions,
-        address  # Pass the address to correctly track it in fee extraction
-    )
-    transactions.extend(recipient_transactions)
+    fetch_and_write(f"transfer.recipient='{address}'", "recipient")
 
     # Combine and deduplicate transactions based on 'txhash'
-    unique_transactions = {tx['txhash']: tx for tx in transactions}
+    unique_transactions = {tx['txhash']: tx for tx in all_transactions}
     transactions = list(unique_transactions.values())
 
-    return transactions
+    # Optionally, write all unique transactions to a single file
+    all_file_path = os.path.join(unique_output_dir, f"all_transactions_{request_id}.json")
+    with open(all_file_path, 'w', encoding='utf-8') as f:
+        json.dump(transactions, f, ensure_ascii=False, indent=4)
 
+    logging.info(f"Total unique transactions fetched: {len(transactions)}")
+
+    return transactions
 
 def fetch_transactions_for_event(query, api_url, per_page, max_transactions=None, queried_address=None):
     transactions = []
     current_page = 1
 
     while True:
-        print(f"Fetching transactions for query: {query}, page: {current_page}")
+        logging.info(f"Fetching transactions for query: {query}, page: {current_page}")
 
         params = {
             'query': query,
@@ -114,18 +155,27 @@ def fetch_transactions_for_event(query, api_url, per_page, max_transactions=None
             'page': str(current_page)
         }
 
-        response = requests.get(api_url, params=params)
-        if response.status_code != 200:
-            print(f"Failed to fetch transactions: {response.text}")
+        try:
+            response = requests.get(api_url, params=params)
+        except requests.exceptions.RequestException as e:
+            logging.error(f"HTTP request failed: {e}")
             break
 
-        data = response.json()
+        if response.status_code != 200:
+            logging.error(f"Failed to fetch transactions: {response.text}")
+            break  # Exit the loop on error
 
-        txs = data.get('txs', [])
+        try:
+            data = response.json()
+        except json.JSONDecodeError as e:
+            logging.error(f"JSON decode error: {e}")
+            break
+
         tx_responses = data.get('tx_responses', [])
 
-        if not txs:
-            break
+        if not tx_responses:
+            logging.info("No more transactions found.")
+            break  # Exit if no transactions are returned
 
         for tx_response in tx_responses:
             # Add fee information to each transaction response
@@ -151,17 +201,23 @@ def fetch_transactions_for_event(query, api_url, per_page, max_transactions=None
 
             # Check if we've reached the maximum number of transactions
             if max_transactions and len(transactions) >= max_transactions:
+                logging.info(f"Reached the maximum limit of {max_transactions} transactions.")
                 return transactions
 
-        # Increment the page number
+        # Check if fewer transactions were returned than requested, indicating last page
+        if len(tx_responses) < per_page:
+            logging.info("Reached the last page of transactions.")
+            break
+
+        # Increment the page number for the next iteration
         current_page += 1
 
         # If max_transactions is set and we've reached it, stop fetching
         if max_transactions and len(transactions) >= max_transactions:
+            logging.info(f"Reached the maximum limit of {max_transactions} transactions.")
             break
 
     return transactions[:max_transactions] if max_transactions else transactions
-
 
 def extract_fee(tx_response, queried_address):
     events = tx_response.get('events', [])
@@ -206,7 +262,6 @@ def extract_fee(tx_response, queried_address):
     else:
         return None, None
 
-
 def parse_amount(amount_str):
     import re
     match = re.match(r'(?P<amount>\d+)(?P<denom>.+)', amount_str)
@@ -223,9 +278,8 @@ def contains_cosmos_events(tx_response, cosmos_event_types={'delegate', 'redeleg
             return True
     return False
 
-
 def process_transactions(
-    transactions,
+    transactions,  # Now expects a list of transaction dictionaries
     tracked_addresses,
     hex_wallet_addresses,
     output_filename,
@@ -243,20 +297,27 @@ def process_transactions(
 
     # Update address_name_map with hex addresses
     for addr in tracked_addresses:
-        address_name_map[addr.lower()] = 'My Wallet'
-        try:
-            hex_addr = bech32_to_hex(addr).lower()
-            address_name_map[hex_addr] = 'My Wallet'
-            hex_wallet_addresses.append(hex_addr.lower())
-        except ValueError as e:
-            print(f"Error converting address {addr}: {e}")
+        if isinstance(addr, str):
+            address_name_map[addr.lower()] = 'My Wallet'
+            try:
+                hex_addr = bech32_to_hex(addr).lower()
+                address_name_map[hex_addr] = 'My Wallet'
+                if hex_addr not in hex_wallet_addresses:
+                    hex_wallet_addresses.append(hex_addr.lower())
+            except ValueError as e:
+                print(f"Error converting address {addr}: {e}")
+        else:
+            print(f"Expected address to be a string, got {type(addr)}")
 
     for tx_response in tqdm(transactions, desc='Processing transactions'):
         # Extract fee information from tx_response
         fee_amount = tx_response.get('fee_amount')
         fee_currency = tx_response.get('fee_currency')
 
-        tx_hash = tx_response['txhash']
+        tx_hash = tx_response.get('txhash')
+        if not tx_hash:
+            logging.warning("Transaction missing 'txhash'. Skipping.")
+            continue
 
         # Determine if the transaction contains Cosmos-specific events
         has_cosmos_event = contains_cosmos_events(tx_response)
@@ -268,7 +329,7 @@ def process_transactions(
         if has_cosmos_event:
             is_evm_tx = False
         else:
-            # Updated code: Use events directly
+            # Use events directly
             events = tx_response.get('events', [])
             for event in events:
                 if event.get('type') == 'ethereum_tx':
@@ -281,7 +342,6 @@ def process_transactions(
                             break
                     if eth_tx_hash:
                         break
-
 
         # Extract Ethereum tx hash if present
         if is_evm_tx:
@@ -331,16 +391,15 @@ def process_transactions(
             processed_transactions.extend(processed_events)
             mapped_tx_hashes.add(tx_hash)
 
-
     # After processing all transactions, identify and add standalone Fee entries
     for tx_response in transactions:
-        tx_hash = tx_response['txhash']
+        tx_hash = tx_response.get('txhash')
         fee_amount = tx_response.get('fee_amount')
         fee_currency = tx_response.get('fee_currency')
 
         # Check if transaction has a fee and has not been mapped
         if fee_amount and fee_currency and tx_hash not in mapped_tx_hashes:
-            timestamp = tx_response['timestamp']
+            timestamp = tx_response.get('timestamp')
             eth_tx_hash = tx_response.get('ethereum_tx_hash', '')  # Extract eth_tx_hash if available
 
             # Extract method_name using the helper function
@@ -370,11 +429,11 @@ def process_transactions(
                 'fee_currency': fee_currency,
                 'ethereum_tx_hash': eth_tx_hash  # Include Ethereum Tx Hash
             }
-            print(f"Adding standalone Fee entry for transaction {tx_hash} with method '{method_name}'")
+            logging.info(f"Adding standalone Fee entry for transaction {tx_hash} with method '{method_name}'")
             processed_transactions.append(fee_entry)
 
     if not processed_transactions:
-        print("No valid transactions to process.")
+        logging.info("No valid transactions to process.")
         return processed_transactions  # Return empty list
 
     return processed_transactions  # Only return the processed transactions
@@ -415,9 +474,9 @@ def process_evm_transaction(
             if event.get('type') == 'ethereum_tx':
                 attributes = event.get('attributes', [])
                 for attr in attributes:
-                    if attr['key'] == 'ethereumTxFailed':
+                    if attr.get('key') == 'ethereumTxFailed':
                         ethereum_tx_failed = True
-                        failure_reason = attr['value']
+                        failure_reason = attr.get('value')
                 if ethereum_tx_failed:
                     break
         if ethereum_tx_failed:
@@ -455,10 +514,6 @@ def process_evm_transaction(
 
     # Extract 'from' address from 'message' event attributes
     events = tx_response.get('events', [])
-    from_address_hex = None
-    to_address_hex = None
-    value = 0
-
     for event in events:
         if event.get('type') == 'message':
             attributes = event.get('attributes', [])
@@ -474,7 +529,6 @@ def process_evm_transaction(
                     break
             if from_address_hex:
                 break
-
 
     # Extract 'to' address and 'value' from transaction data
     try:
@@ -506,7 +560,11 @@ def process_evm_transaction(
                     logger.info(f"Method Name set to 'EVM Transfer' based on value: {value_str}")
             to_address_hex = msg_data.get('to', '').lower()
             value_str = msg_data.get('value', '0')
-            value = int(value_str)
+            try:
+                value = int(value_str)
+            except ValueError:
+                value = 0
+                logger.error(f"Invalid value format: {value_str}")
             logger.debug(f"To Address Hex: {to_address_hex}, Value: {value}")
     except Exception as e:
         logger.error(f"Error extracting 'to' and 'value' from transaction {tx_hash}: {e}")
@@ -587,7 +645,6 @@ def process_evm_transaction(
                         continue
     return processed_events
 
-
 def process_cosmos_transaction(
     tx_response,
     tracked_addresses,
@@ -621,7 +678,7 @@ def process_cosmos_transaction(
             processed_events.append(cosmos_event)
     return processed_events
 
-def process_wallets(wallet_addresses, max_transactions=None, api_url=None):
+def process_wallets(wallet_addresses, max_transactions=None, api_url=None, request_id=None):
     """
     Processes the provided wallet addresses and returns the results.
     
@@ -629,6 +686,7 @@ def process_wallets(wallet_addresses, max_transactions=None, api_url=None):
         wallet_addresses (list): List of wallet addresses (Bech32 or Hex).
         max_transactions (int, optional): Maximum number of transactions to fetch.
         api_url (str, optional): Custom API URL. If None, use the default.
+        request_id (str, optional): Unique identifier for the request.
         
     Returns:
         dict: Contains cointracking DataFrame.
@@ -678,8 +736,8 @@ def process_wallets(wallet_addresses, max_transactions=None, api_url=None):
     # Fetch transactions
     transactions = []
     for address in tracked_addresses:
-        print(f"Fetching transactions for address: {address}")
-        txs = fetch_transactions(address, max_transactions, api_url)  # Pass api_url
+        logging.info(f"Fetching transactions for address: {address}")
+        txs = fetch_transactions(address, max_transactions, api_url, request_id=request_id)  # Pass request_id
         transactions.extend(txs)
         # Check if maximum transactions limit is reached
         if max_transactions and len(transactions) >= max_transactions:
@@ -693,10 +751,10 @@ def process_wallets(wallet_addresses, max_transactions=None, api_url=None):
 
     # Process transactions
     processed_transactions = process_transactions(
-        transactions,
+        transactions,  # Pass the transactions list directly
         tracked_addresses,
         hex_wallet_addresses,
-        'transactions.xlsx',  # Placeholder, not used in web app
+        'transactions.xlsx',  # Placeholder, will be renamed in main()
         method_sig_to_name,
         address_name_map,
         ibc_denom_library,
@@ -728,160 +786,186 @@ def main():
     """
     Main function to execute the transaction fetching and processing.
     """
-    # Prompt the user for wallet addresses
-    wallet_input = input("Please enter the Cosmos wallet address(es) (Bech32 or Hex, separated by commas or spaces): ").strip()
+    # Initialize unique_output_dir to None
+    unique_output_dir = None
 
-    # Split the input into individual addresses
-    if ',' in wallet_input:
-        input_addresses = [addr.strip() for addr in wallet_input.split(',')]
-    else:
-        input_addresses = [addr.strip() for addr in wallet_input.split()]
+    try:
+        # Generate a unique request ID
+        request_id = str(uuid.uuid4())
+        logging.info(f"Generated request ID: {request_id}")
 
-    if not input_addresses:
-        print("No wallet addresses provided. Exiting.")
-        return
+        # Prompt the user for wallet addresses
+        wallet_input = input("Please enter the Cosmos wallet address(es) (Bech32 or Hex, separated by commas or spaces): ").strip()
 
-    tracked_addresses = []
-    hex_wallet_addresses = []
-    address_name_map = load_address_name_map()
-
-    for addr in input_addresses:
-        if is_bech32_address(addr):
-            # Address is in Bech32 format
-            bech32_addr = addr.lower()
-            try:
-                hex_addr = bech32_to_hex(bech32_addr)
-                tracked_addresses.append(bech32_addr)
-                hex_wallet_addresses.append(hex_addr)
-                address_name_map[bech32_addr] = 'My Wallet'
-                address_name_map[hex_addr] = 'My Wallet'
-            except ValueError as e:
-                print(f"Error converting Bech32 address {bech32_addr}: {e}")
-        elif is_hex_address(addr):
-            # Address is in Hex format
-            hex_addr = addr.lower()
-            try:
-                bech32_addr = hex_to_bech32(hex_addr)
-                tracked_addresses.append(bech32_addr)
-                hex_wallet_addresses.append(hex_addr)
-                address_name_map[bech32_addr] = 'My Wallet'
-                address_name_map[hex_addr] = 'My Wallet'
-            except ValueError as e:
-                print(f"Error converting Hex address {hex_addr}: {e}")
+        # Split the input into individual addresses
+        if ',' in wallet_input:
+            input_addresses = [addr.strip() for addr in wallet_input.split(',')]
         else:
-            print(f"Invalid address format: {addr}. Please enter a valid Bech32 or Hex address.")
-
-    if not tracked_addresses:
-        print("No valid wallet addresses provided after processing. Exiting.")
-        return
-
-    # Prompt the user for maximum number of transactions
-    max_tx_input = input("Please enter the maximum number of transactions to fetch (leave blank for no limit): ").strip()
-    if max_tx_input:
-        try:
-            max_transactions = int(max_tx_input)
-            if max_transactions <= 0:
-                print("Maximum transactions must be a positive integer. Exiting.")
-                return
-        except ValueError:
-            print("Invalid input for maximum transactions. Please enter a positive integer. Exiting.")
+            input_addresses = [addr.strip() for addr in wallet_input.split()]
+    
+        if not input_addresses:
+            print("No wallet addresses provided. Exiting.")
             return
-    else:
-        max_transactions = None  # No limit
 
-    # Load data once
-    method_sig_to_name = load_method_signatures()
-    ibc_denom_library = load_ibc_denom_library()
-    contract_library = load_contract_library()
-    validator_name_map = load_validator_name_mapping('Validator_name_mapping.csv')
+        tracked_addresses = []
+        hex_wallet_addresses = []
+        address_name_map = load_address_name_map()
 
-    # Fetch transactions
-    transactions = []
-    for address in tracked_addresses:
-        print(f"Fetching transactions for address: {address}")
-        txs = fetch_transactions(address, max_transactions)
-        transactions.extend(txs)
-        # Check if maximum transactions limit is reached
-        if max_transactions and len(transactions) >= max_transactions:
-            break
+        for addr in input_addresses:
+            if is_bech32_address(addr):
+                # Address is in Bech32 format
+                bech32_addr = addr.lower()
+                try:
+                    hex_addr = bech32_to_hex(bech32_addr)
+                    tracked_addresses.append(bech32_addr)
+                    hex_wallet_addresses.append(hex_addr)
+                    address_name_map[bech32_addr] = 'My Wallet'
+                    address_name_map[hex_addr] = 'My Wallet'
+                except ValueError as e:
+                    print(f"Error converting Bech32 address {bech32_addr}: {e}")
+            elif is_hex_address(addr):
+                # Address is in Hex format
+                hex_addr = addr.lower()
+                try:
+                    bech32_addr = hex_to_bech32(hex_addr)
+                    tracked_addresses.append(bech32_addr)
+                    hex_wallet_addresses.append(hex_addr)
+                    address_name_map[bech32_addr] = 'My Wallet'
+                    address_name_map[hex_addr] = 'My Wallet'
+                except ValueError as e:
+                    print(f"Error converting Hex address {hex_addr}: {e}")
+            else:
+                print(f"Invalid address format: {addr}. Please enter a valid Bech32 or Hex address.")
 
-    if not transactions:
-        print("No transactions found.")
-        return
+        if not tracked_addresses:
+            print("No valid wallet addresses provided after processing. Exiting.")
+            return
 
-    # Define output filename
-    if len(tracked_addresses) == 1:
-        address = tracked_addresses[0]
-        # Sanitize the address for use in a filename
-        sanitized_address = address.replace(' ', '').replace('/', '_').replace('\\', '_')[:10]  # Truncate to first 10 chars
-        output_filename = f'transactions_{sanitized_address}.xlsx'
-    else:
-        output_filename = 'transactions_combined.xlsx'
+        # Prompt the user for maximum number of transactions
+        max_tx_input = input("Please enter the maximum number of transactions to fetch (leave blank for no limit): ").strip()
+        if max_tx_input:
+            try:
+                max_transactions = int(max_tx_input)
+                if max_transactions <= 0:
+                    print("Maximum transactions must be a positive integer. Exiting.")
+                    return
+            except ValueError:
+                print("Invalid input for maximum transactions. Please enter a positive integer. Exiting.")
+                return
+        else:
+            max_transactions = None  # No limit
 
-    # Process transactions
-    processed_transactions = process_transactions(
-        transactions,
-        tracked_addresses,
-        hex_wallet_addresses,
-        output_filename,
-        method_sig_to_name,
-        address_name_map,
-        ibc_denom_library,
-        contract_library,
-        validator_name_map
-    )
+        # Load data once
+        method_sig_to_name = load_method_signatures()
+        ibc_denom_library = load_ibc_denom_library()
+        contract_library = load_contract_library()
+        validator_name_map = load_validator_name_mapping('Validator_name_mapping.csv')
 
-    # Check if there are any processed transactions
-    if not processed_transactions:
-        print("No processed transactions to map. Exiting.")
-        return
+        # Fetch transactions
+        transactions = []
+        for address in tracked_addresses:
+            logging.info(f"Fetching transactions for address: {address}")
+            txs = fetch_transactions(address, max_transactions, api_url=None, request_id=request_id)  # Pass request_id
+            transactions.extend(txs)
+            # Check if maximum transactions limit is reached
+            if max_transactions and len(transactions) >= max_transactions:
+                logging.info(f"Reached the maximum limit of {max_transactions} transactions.")
+                break
 
-    # Define exchange addresses as a comma-separated string
-    exchange_str = ', '.join(tracked_addresses)
+        if not transactions:
+            print("No transactions found.")
+            return
 
-    # Map to CoinTracking format with exchange addresses
-    cointracking_df = map_to_cointracking(
-        processed_transactions,
-        hex_wallet_addresses,
-        contract_library,
-        exchange_str
-    )
+        # Define output filename based on wallet addresses
+        if len(tracked_addresses) == 1:
+            address = tracked_addresses[0]
+            # Sanitize the address for use in a filename
+            sanitized_address = address.replace(' ', '').replace('/', '_').replace('\\', '_')
+            output_filename = f'{sanitized_address}_{request_id}.xlsx'
+        else:
+            # Join multiple addresses with underscores, limit total length if necessary
+            sanitized_addresses = '_'.join([addr.replace(' ', '').replace('/', '_').replace('\\', '_') for addr in tracked_addresses])
+            # Optionally, limit the length to prevent filesystem issues
+            sanitized_addresses = sanitized_addresses[:50]  # Adjust as needed
+            output_filename = f'{sanitized_addresses}_{request_id}.xlsx'
 
-    # Check if the DataFrame is empty
-    if cointracking_df.empty:
-        print("No data to write to Excel. The CoinTracking DataFrame is empty.")
-    else:
-        # Convert 'Date' column to datetime for sorting
-        try:
-            cointracking_df['Date'] = pd.to_datetime(cointracking_df['Date'], format='%d-%m-%Y %H:%M:%S')
-        except Exception as e:
-            print(f"Error converting 'Date' column to datetime: {e}")
+        logging.info(f"Output Excel file will be named: {output_filename}")
 
-        # Sort by 'Date' in ascending order
-        cointracking_df.sort_values('Date', inplace=True)
+        # Process transactions
+        processed_transactions = process_transactions(
+            transactions,  # Pass the transactions list directly
+            tracked_addresses,
+            hex_wallet_addresses,
+            output_filename,
+            method_sig_to_name,
+            address_name_map,
+            ibc_denom_library,
+            contract_library,
+            validator_name_map
+        )
 
-        # Reset index after sorting
-        cointracking_df.reset_index(drop=True, inplace=True)
+        # Check if there are any processed transactions
+        if not processed_transactions:
+            print("No processed transactions to map.")
+            return
 
-        # Save to Excel
-        try:
-            cointracking_df.to_excel(output_filename, index=False, engine='openpyxl')
-            print(f"Excel file '{output_filename}' generated successfully.")
-        except PermissionError as pe:
-            print(f"Permission Error: {pe}")
-            print("Please ensure the Excel file is not open in any application and that you have write permissions to the directory.")
-        except Exception as e:
-            print(f"An error occurred while saving Excel file: {e}")
+        # Define exchange addresses as a comma-separated string
+        exchange_str = ', '.join(tracked_addresses)
 
-    # Output the processed transactions to a JSON file (Removed)
-    # with open('processed_transactions.json', 'w', encoding='utf-8') as f:
-    #     json.dump(processed_transactions, f, ensure_ascii=False, indent=4)
-    # print("Processed transactions have been saved to 'processed_transactions.json'.")
+        # Map to CoinTracking format with exchange addresses
+        cointracking_df = map_to_cointracking(
+            processed_transactions,
+            hex_wallet_addresses,
+            contract_library,
+            exchange_str
+        )
+
+        # Check if the DataFrame is empty
+        if cointracking_df.empty:
+            print("No data to write to Excel. The CoinTracking DataFrame is empty.")
+        else:
+            # Convert 'Date' column to datetime for sorting
+            try:
+                cointracking_df['Date'] = pd.to_datetime(cointracking_df['Date'], format='%d-%m-%Y %H:%M:%S')
+            except Exception as e:
+                print(f"Error converting 'Date' column to datetime: {e}")
+
+            # Sort by 'Date' in ascending order
+            cointracking_df.sort_values('Date', inplace=True)
+
+            # Reset index after sorting
+            cointracking_df.reset_index(drop=True, inplace=True)
+
+            # Save to Excel with unique filename
+            try:
+                cointracking_df.to_excel(output_filename, index=False, engine='openpyxl')
+                print(f"Excel file '{output_filename}' generated successfully.")
+                logging.info(f"Excel file '{output_filename}' generated successfully.")
+            except PermissionError as pe:
+                print(f"Permission Error: {pe}")
+                logging.error(f"Permission Error while saving Excel file: {pe}")
+                print("Please ensure the Excel file is not open in any application and that you have write permissions to the directory.")
+            except Exception as e:
+                print(f"An error occurred while saving Excel file: {e}")
+                logging.error(f"An error occurred while saving Excel file: {e}")
+
+    except Exception as e:
+        logging.error(f"An error occurred: {e}")
+        print(f"An unexpected error occurred: {e}")
+    finally:
+        # Clean up temporary files
+        if request_id:
+            unique_output_dir = os.path.join('fetched_transactions', f"request_{request_id}")
+            if os.path.exists(unique_output_dir):
+                try:
+                    shutil.rmtree(unique_output_dir)
+                    logging.info(f"Cleaned up temporary directory: {unique_output_dir}")
+                except Exception as e:
+                    logging.error(f"Error cleaning up temporary directory {unique_output_dir}: {e}")
+            else:
+                logging.warning(f"Temporary directory {unique_output_dir} does not exist. Nothing to clean up.")
+        else:
+            logging.warning("No request_id available. Skipping cleanup.")
 
 if __name__ == '__main__':
-    try:
-        main()
-    except Exception as e:
-        print(f"An error occurred: {e}")
-    finally:
-        input("Press Enter to exit...")
+    main()
